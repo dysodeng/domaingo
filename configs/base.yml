@@ -1,0 +1,29 @@
+base:
+  name: domaingo
+  env: dev
+  cluster: local
+  company: talent_limited
+  project: skeleton
+  color: ""
+  server:
+    http:
+      port: 8080
+  log:
+    filename: ./logs/service.log
+    level: debug
+    max_size: 32
+    max_backups: 5
+    max_age: 7
+    compress: false
+    enable_stdout: false
+  gateway:
+    enable: true
+    ip: 127.0.0.1
+    port: 5432
+    ttl: 15
+    weight: 0
+  registry:
+    enable: true
+    ip: 127.0.0.1
+    port: 5432
+    weight: 0

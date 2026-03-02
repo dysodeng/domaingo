@@ -20,6 +20,6 @@ type App struct {
 	ctx    context.Context
 	flags  Flags
 	cfg    config.Config
-	client []client.Client // 基础设施客户端
-	runner []runner.Runner // 基础设施持续运行的服务
+	client map[string]client.Client // 基础设施客户端
+	runner map[string]runner.Runner // 基础设施持续运行的服务
 }
