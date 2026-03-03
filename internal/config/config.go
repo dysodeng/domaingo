@@ -102,10 +102,13 @@ func Load(opts ...func(opt *Option)) error {
 }
 
 func Watch(handler configCli.ChangeHandler) error {
+
 	if Config == nil || Config.baseLoader == nil {
 		return errors.New("config not loaded, call Load() first")
 	}
-	return Config.baseLoader.Watch(func(event *configCli.ChangeEvent) {
+
+	var err error
+	err = Config.baseLoader.Watch(func(event *configCli.ChangeEvent) {
 		// 1. 自动同步全局 Config.Base
 		Config.l.Lock()
 		newBase, err := Config.baseLoader.Unmarshal()
@@ -119,4 +122,6 @@ func Watch(handler configCli.ChangeHandler) error {
 			handler(event)
 		}
 	})
+
+	return err
 }
