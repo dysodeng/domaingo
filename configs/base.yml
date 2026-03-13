@@ -1,13 +1,4 @@
 base:
-  name: domaingo
-  env: dev
-  cluster: local
-  company: talent_limited
-  project: skeleton
-  color: ""
-  server:
-    http:
-      port: 8080
   log:
     filename: ./logs/service.log
     level: debug

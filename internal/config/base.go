@@ -1,6 +1,8 @@
 package config
 
 import (
+	"context"
+
 	configCli "github.com/CXeon/tiles/config"
 	"github.com/CXeon/tiles/config/apollo"
 	"github.com/CXeon/tiles/config/viper"
@@ -9,16 +11,12 @@ import (
 const baseLocalFileName = "base"
 
 type base struct {
-	Name    string `json:"name" mapstructure:"name"`
-	Env     string `json:"env" mapstructure:"env"`
-	Cluster string `json:"cluster" mapstructure:"cluster"`
-	Company string `json:"company" mapstructure:"company"`
-	Project string `json:"project" mapstructure:"project"`
-	Color   string `json:"color" mapstructure:"color"`
-	Server  struct {
-		Http string `json:"http" mapstructure:"http"`
-		Port int    `json:"port" mapstructure:"port"`
-	} `json:"server" mapstructure:"server"`
+	// Name    string `json:"name" mapstructure:"name"`
+	// Env     string `json:"env" mapstructure:"env"`
+	// Cluster string `json:"cluster" mapstructure:"cluster"`
+	// Company string `json:"company" mapstructure:"company"`
+	// Project string `json:"project" mapstructure:"project"`
+	// Color   string `json:"color" mapstructure:"color"`
 	Log struct {
 		Filename     string `json:"filename" mapstructure:"filename"`
 		Level        string `json:"level" mapstructure:"level"`
@@ -49,10 +47,10 @@ type BaseLoader struct {
 
 func NewBaseLoader(opt Option) *BaseLoader {
 	var cli configCli.Config
-	if opt.mode == Remote {
+	if opt.f.ConfigMode == Remote {
 		cfg := apollo.Config{
-			AppID:          opt.remote.AppID,
-			Cluster:        opt.remote.Cluster,
+			AppID:          opt.f.ServiceName,
+			Cluster:        opt.f.Cluster,
 			IP:             opt.remote.IP,
 			NamespaceName:  opt.remote.NamespaceName,
 			Secret:         opt.remote.Secret,
@@ -60,13 +58,13 @@ func NewBaseLoader(opt Option) *BaseLoader {
 		}
 		cli = apollo.New(cfg)
 	}
-	if opt.mode != Remote {
+	if opt.f.ConfigMode != Remote {
 		cfg := viper.Config{
-			ConfigPaths: opt.local.Paths,
+			ConfigPaths: opt.local.paths,
 			ConfigName:  baseLocalFileName,
-			ConfigType:  opt.local.Type,
-			EnvPrefix:   opt.local.EnvPrefix,
-			AutoEnv:     opt.local.AutoEnv,
+			ConfigType:  opt.local.typ,
+			EnvPrefix:   opt.local.envPrefix,
+			AutoEnv:     opt.local.autoEnv,
 		}
 		cli = viper.New(cfg)
 	}
@@ -97,4 +95,8 @@ func (l *BaseLoader) Unmarshal() (*base, error) {
 
 func (l *BaseLoader) Watch(handler configCli.ChangeHandler) error {
 	return l.cli.Watch(handler)
+}
+
+func (l *BaseLoader) Close() error {
+	return l.cli.Close(context.Background())
 }

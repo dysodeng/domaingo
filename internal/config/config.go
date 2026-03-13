@@ -11,30 +11,27 @@ var Config *config
 var once sync.Once
 
 type config struct {
+	// 记录启动参数作为配置，生命周期内无法修改
+	Flags
+	lextra *localExtra
+	rextra *remoteExtra
+
 	l          sync.RWMutex
 	baseLoader *BaseLoader
 
 	Base *base `json:"base"`
 }
 
-type Option struct {
-	mode   Mode
-	local  *LocalConfig
-	remote *RemoteConfig
-}
-
-// 设置配置模式
-func WithMode(mode Mode) func(opt *Option) {
-	return func(opt *Option) {
-		opt.mode = mode
-	}
-}
-
-// 设置远程配置参数
-func WithRemote(remote *RemoteConfig) func(opt *Option) {
-	return func(opt *Option) {
-		opt.remote = remote
-	}
+// Flags 包装程序启动参数，在程序的生命周期内不允许修改
+type Flags struct {
+	ConfigMode  Mode   // 配置模式 local 加载本地配置文件，remote 从远程配置中心加载
+	Env         string // 环境名称
+	Cluster     string // 集群名称
+	Company     string
+	Project     string
+	ServiceName string // 服务名称
+	Color       string // 染色
+	HttpPort    uint   // 服务监听端口
 }
 
 type Mode string
@@ -44,51 +41,69 @@ const (
 	Remote Mode = "remote"
 )
 
-type LocalConfig struct {
-	Paths []string `json:"paths"`
-	// Name      string   `json:"name"`
-	Type      string `json:"type"`
-	EnvPrefix string `json:"env_prefix"`
-	AutoEnv   bool   `json:"auto_env"`
+// 本地配置补充
+type localExtra struct {
+	paths     []string
+	typ       string
+	envPrefix string
+	autoEnv   bool
 }
 
-type RemoteConfig struct {
-	AppID         string `json:"app_id"`
+// 远程配置补充
+type remoteExtra struct {
+	// AppID         string `json:"app_id"`
 	Cluster       string `json:"cluster"`
+	Dev           string `json:"dev"`
 	IP            string `json:"ip"`
 	NamespaceName string `json:"namespace_name"`
 	Secret        string `json:"secret"`
-	IsBackup      bool   `json:"is_backup"`
+	// IsBackup      bool   `json:"is_backup"`
 }
 
-func Load(opts ...func(opt *Option)) error {
-	// 默认加载本地配置
-	defaultOpt := Option{
-		mode: Local,
-		local: &LocalConfig{
-			Paths:     []string{"./configs/"},
-			Type:      "yaml",
-			EnvPrefix: "DOMAINGO",
-			AutoEnv:   true,
-		},
-		remote: nil,
-	}
+type Option struct {
+	f      Flags
+	local  *localExtra
+	remote *remoteExtra
+}
 
-	for _, opt := range opts {
-		opt(&defaultOpt)
-	}
-
-	if defaultOpt.mode == Remote && defaultOpt.remote == nil {
-		return errors.New("remote config must required in remote mode")
+func Load(f Flags) error {
+	// 判断配置模式
+	if f.ConfigMode != Local && f.ConfigMode != Remote {
+		return errors.New("invalid config mode")
 	}
 
 	once.Do(func() {
 		Config = &config{
-			l: sync.RWMutex{},
+			Flags: f,
+			l:     sync.RWMutex{},
+		}
+
+		if f.ConfigMode == Local {
+			// 本地模式启动。补充配置参数
+			Config.lextra = &localExtra{
+				paths:     []string{"./configs/"},
+				typ:       "yaml",
+				envPrefix: "",
+				autoEnv:   true,
+			}
+		}
+
+		if f.ConfigMode == Remote {
+			tmp, err := getRemoteExtra(f.Env, f.Cluster)
+			if err != nil {
+				panic(err)
+			}
+			Config.rextra = &tmp
+		}
+
+		opt := Option{
+			f:      f,
+			local:  Config.lextra,
+			remote: Config.rextra,
 		}
 
 		// 加载base配置
-		baseLoader := NewBaseLoader(defaultOpt)
+		baseLoader := NewBaseLoader(opt)
 		base, err := baseLoader.Load()
 		if err != nil {
 			panic(err)
@@ -124,4 +139,25 @@ func Watch(handler configCli.ChangeHandler) error {
 	})
 
 	return err
+}
+
+func Close() error {
+	if Config == nil || Config.baseLoader == nil {
+		return nil
+	}
+	var errs []error
+	err := Config.baseLoader.Close()
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+	return nil
+}
+
+// TODO 根据环境和集群获取远程配置中心IP等信息
+func getRemoteExtra(env, cluster string) (remoteExtra, error) {
+	panic("fix me")
 }
