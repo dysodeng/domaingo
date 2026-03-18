@@ -18,8 +18,10 @@ type config struct {
 
 	l          sync.RWMutex
 	baseLoader *BaseLoader
+	rdbLoader  *RdbLoader
 
 	Base *base `json:"base"`
+	Rdb  *rdb  `json:"rdb"`
 }
 
 // Flags 包装程序启动参数，在程序的生命周期内不允许修改
@@ -111,6 +113,15 @@ func Load(f Flags) error {
 		Config.baseLoader = baseLoader
 		Config.Base = base
 
+		// 加载rdb配置
+		rdbLoader := NewRdbLoader(opt)
+		rdbCfg, err := rdbLoader.Load()
+		if err != nil {
+			panic(err)
+		}
+		Config.rdbLoader = rdbLoader
+		Config.Rdb = rdbCfg
+
 	})
 
 	return nil
@@ -137,6 +148,22 @@ func Watch(handler configCli.ChangeHandler) error {
 			handler(event)
 		}
 	})
+	if err != nil {
+		return err
+	}
+
+	err = Config.rdbLoader.Watch(func(event *configCli.ChangeEvent) {
+		Config.l.Lock()
+		newRdb, err := Config.rdbLoader.Unmarshal()
+		if err == nil {
+			Config.Rdb = newRdb
+		}
+		Config.l.Unlock()
+
+		if handler != nil {
+			handler(event)
+		}
+	})
 
 	return err
 }
@@ -146,9 +173,13 @@ func Close() error {
 		return nil
 	}
 	var errs []error
-	err := Config.baseLoader.Close()
-	if err != nil {
+	if err := Config.baseLoader.Close(); err != nil {
 		errs = append(errs, err)
+	}
+	if Config.rdbLoader != nil {
+		if err := Config.rdbLoader.Close(); err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	if len(errs) > 0 {

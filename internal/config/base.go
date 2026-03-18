@@ -11,12 +11,6 @@ import (
 const baseLocalFileName = "base"
 
 type base struct {
-	// Name    string `json:"name" mapstructure:"name"`
-	// Env     string `json:"env" mapstructure:"env"`
-	// Cluster string `json:"cluster" mapstructure:"cluster"`
-	// Company string `json:"company" mapstructure:"company"`
-	// Project string `json:"project" mapstructure:"project"`
-	// Color   string `json:"color" mapstructure:"color"`
 	Log struct {
 		Filename     string `json:"filename" mapstructure:"filename"`
 		Level        string `json:"level" mapstructure:"level"`
@@ -27,17 +21,27 @@ type base struct {
 		EnableStdout bool   `json:"enable_stdout" mapstructure:"enable_stdout"`
 	} `json:"log" mapstructure:"log"`
 	Gateway struct {
-		Enabled bool   `json:"enabled" mapstructure:"enabled"`
-		Ip      string `json:"ip" mapstructure:"ip"`
-		Port    int    `json:"port" mapstructure:"port"`
-		TTL     int    `json:"ttl" mapstructure:"ttl"`
-		Weight  int    `json:"weight" mapstructure:"weight"`
+		Enabled  bool `json:"enabled" mapstructure:"enabled"`
+		TTL      int  `json:"ttl" mapstructure:"ttl"`
+		Weight   int  `json:"weight" mapstructure:"weight"`
+		Provider struct {
+			Endpoints   []string `json:"endpoints" mapstructure:"endpoints"`
+			Username    string   `json:"username" mapstructure:"username"`
+			Password    string   `json:"password" mapstructure:"password"`
+			DialTimeout int      `json:"dial_timeout" mapstructure:"dial_timeout"` // seconds
+			Namespace   string   `json:"namespace" mapstructure:"namespace"`
+		} `json:"provider" mapstructure:"provider"`
 	} `json:"gateway" mapstructure:"gateway"`
 	Registry struct {
-		Enabled bool   `json:"enabled" mapstructure:"enabled"`
-		Ip      string `json:"ip" mapstructure:"ip"`
-		Port    int    `json:"port" mapstructure:"port"`
-		Weight  int    `json:"weight" mapstructure:"weight"`
+		Enabled  bool `json:"enabled" mapstructure:"enabled"`
+		Weight   int  `json:"weight" mapstructure:"weight"`
+		Provider struct {
+			Endpoints            []string `json:"endpoints" mapstructure:"endpoints"`
+			Username             string   `json:"username" mapstructure:"username"`
+			Password             string   `json:"password" mapstructure:"password"`
+			DialTimeout          int      `json:"dial_timeout" mapstructure:"dial_timeout"` // seconds
+			LoadBalancerStrategy uint8    `json:"load_balancer_strategy" mapstructure:"load_balancer_strategy"`
+		} `json:"provider" mapstructure:"provider"`
 	} `json:"registry" mapstructure:"registry"`
 }
 

@@ -6,15 +6,25 @@ base:
     max_backups: 5
     max_age: 7
     compress: false
-    enable_stdout: false
+    enable_stdout: true
   gateway:
-    enable: true
-    ip: 127.0.0.1
-    port: 5432
+    enabled: true
     ttl: 15
-    weight: 0
+    weight: 10
+    provider:
+      endpoints:
+        - 127.0.0.1:2379
+      username: ""
+      password: ""
+      dial_timeout: 5
+      namespace: traefik
   registry:
-    enable: true
-    ip: 127.0.0.1
-    port: 5432
-    weight: 0
+    enabled: true
+    weight: 10
+    provider:
+      endpoints:
+        - 127.0.0.1:2379
+      username: ""
+      password: ""
+      dial_timeout: 5
+      load_balancer_strategy: 0
