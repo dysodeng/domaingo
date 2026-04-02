@@ -5,6 +5,6 @@
 openspec
 AGENTS.md
 QODER.md
- logs/*.log
- .claude
+logs/*.log
+.claude
 .env
