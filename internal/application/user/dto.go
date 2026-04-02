@@ -12,6 +12,7 @@ type UserDTO struct {
 	UID       string
 	Name      string
 	Gender    uint8
+	Role      uint8
 	Email     string
 	CreatedAt time.Time
 }
@@ -19,6 +20,7 @@ type UserDTO struct {
 type CreateUserDTO struct {
 	Name     string
 	Gender   uint8
+	Role     uint8
 	Email    string
 	Password string
 }
@@ -27,6 +29,7 @@ type UpdateUserDTO struct {
 	UID      string
 	Name     string
 	Gender   uint8
+	Role     uint8
 	Email    string
 	Password string
 }
@@ -36,6 +39,7 @@ func toDTO(u *model.User) *UserDTO {
 		UID:       u.UID.String(),
 		Name:      u.Name,
 		Gender:    uint8(u.Gender),
+		Role:      uint8(u.Role),
 		Email:     u.Email,
 		CreatedAt: u.CreatedAt,
 	}

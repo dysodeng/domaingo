@@ -24,12 +24,12 @@ func main() {
 
 	flag.StringVarP(&configMode, "config-mode", "m", "local", "配置模式: local | remote")
 	flag.StringVarP(&env, "env", "e", "dev", "环境名称")
-	flag.StringVar(&cluster, "cluster", "default", "集群名称")
-	flag.StringVar(&company, "company", "", "公司标识")
-	flag.StringVar(&project, "project", "", "项目标识")
-	flag.StringVarP(&serviceName, "service", "s", "", "服务名称")
+	flag.StringVar(&cluster, "cluster", "local", "集群名称")
+	flag.StringVar(&company, "company", "company", "公司标识")
+	flag.StringVar(&project, "project", "project", "项目标识")
+	flag.StringVarP(&serviceName, "service", "s", "domaingo", "服务名称")
 	flag.StringVar(&color, "color", "", "染色标记")
-	flag.UintVarP(&httpPort, "port", "p", 8080, "HTTP 监听端口")
+	flag.UintVarP(&httpPort, "port", "p", 18080, "HTTP 监听端口")
 	flag.Parse()
 
 	if serviceName == "" {

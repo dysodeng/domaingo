@@ -94,6 +94,11 @@ func (r *Rdb) Reader() *gormlib.DB {
 	return r.mainCli.GetDB()
 }
 
+// AutoMigrate runs GORM's AutoMigrate on the primary database for the given models.
+func (r *Rdb) AutoMigrate(models ...any) error {
+	return r.Writer().AutoMigrate(models...)
+}
+
 func ping(ctx context.Context, cli *gormdb.Client) error {
 	pool, err := cli.Pool()
 	if err != nil {

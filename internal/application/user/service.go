@@ -40,6 +40,7 @@ func (s *service) CreateUser(ctx context.Context, dto *CreateUserDTO) (string, e
 		UID:      uuid.New(),
 		Name:     dto.Name,
 		Gender:   model.Gender(dto.Gender),
+		Role:     model.Role(dto.Role),
 		Email:    dto.Email,
 		Password: dto.Password,
 	}
@@ -62,6 +63,7 @@ func (s *service) UpdateUser(ctx context.Context, dto *UpdateUserDTO) error {
 		UID:      uid,
 		Name:     dto.Name,
 		Gender:   model.Gender(dto.Gender),
+		Role:     model.Role(dto.Role),
 		Email:    dto.Email,
 		Password: dto.Password,
 	}

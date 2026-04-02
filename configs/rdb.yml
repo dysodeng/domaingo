@@ -1,17 +1,18 @@
 rdb:
   main:
     enabled: true
-    driver: postgresql
-    host: localhost
-    port: 5432
-    username: postgres
-    password: password
-    database: mydb
+    auto_migrate: false  # RDB_MAIN_AUTO_MIGRATE
+    driver: postgresql   # RDB_MAIN_DRIVER
+    host: ""        # RDB_MAIN_HOST
+    port: 5432      # RDB_MAIN_PORT
+    username: ""    # RDB_MAIN_USERNAME
+    password: ""    # RDB_MAIN_PASSWORD
+    database: ""    # RDB_MAIN_DATABASE
   secondary:
     enabled: true
-    driver: postgresql
-    host: localhost
-    port: 5432
-    username: postgres
-    password: password
-    database: mydb
+    driver: postgresql  # RDB_SECONDARY_DRIVER
+    host: ""        # RDB_SECONDARY_HOST
+    port: 5432      # RDB_SECONDARY_PORT
+    username: ""    # RDB_SECONDARY_USERNAME
+    password: ""    # RDB_SECONDARY_PASSWORD
+    database: ""    # RDB_SECONDARY_DATABASE

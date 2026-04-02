@@ -14,8 +14,10 @@ func Default(r *gin.Engine) *gin.RouterGroup {
 		config.Config.Project,
 		config.Config.ServiceName,
 	)
-	r.Use(middleware.CORS(), gin.Recovery())
+	r.Use(middleware.CORS(), gin.Recovery(), middleware.InjectContext())
 	g := r.Group(prefix)
-	
+	g.GET("/health", func(c *gin.Context) {
+		c.String(200, "OK")
+	})
 	return g
 }

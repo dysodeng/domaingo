@@ -26,3 +26,14 @@ func (g Gender) IsValid() bool {
 func (g Gender) ToInt() int {
 	return int(g)
 }
+
+type Role uint8
+
+const (
+	RoleUser  Role = 0
+	RoleAdmin Role = 1
+)
+
+func (r Role) IsValid() bool {
+	return r == RoleUser || r == RoleAdmin
+}

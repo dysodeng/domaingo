@@ -1,4 +1,8 @@
 base:
+  jwt:
+    secret: ""          # BASE_JWT_SECRET
+    access_ttl: 7200    # BASE_JWT_ACCESS_TTL  (2h)
+    refresh_ttl: 604800 # BASE_JWT_REFRESH_TTL (7d)
   log:
     filename: ./logs/service.log
     level: debug
@@ -12,19 +16,19 @@ base:
     ttl: 15
     weight: 10
     provider:
-      endpoints:
+      endpoints:        # BASE_GATEWAY_PROVIDER_ENDPOINTS
         - 127.0.0.1:2379
-      username: ""
-      password: ""
+      username: ""    # BASE_GATEWAY_PROVIDER_USERNAME
+      password: ""    # BASE_GATEWAY_PROVIDER_PASSWORD
       dial_timeout: 5
       namespace: traefik
   registry:
     enabled: true
     weight: 10
     provider:
-      endpoints:
+      endpoints:        # BASE_REGISTRY_PROVIDER_ENDPOINTS
         - 127.0.0.1:2379
-      username: ""
-      password: ""
+      username: ""    # BASE_REGISTRY_PROVIDER_USERNAME
+      password: ""    # BASE_REGISTRY_PROVIDER_PASSWORD
       dial_timeout: 5
       load_balancer_strategy: 0

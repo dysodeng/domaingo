@@ -9,6 +9,7 @@ import (
 
 type Repository interface {
 	FindByID(ctx context.Context, uid uuid.UUID) (*model.User, error)
+	FindByEmail(ctx context.Context, email string) (*model.User, error)
 	Create(ctx context.Context, user *model.User) (uuid.UUID, error)
 	Update(ctx context.Context, user *model.User) error
 	Delete(ctx context.Context, uid uuid.UUID) error

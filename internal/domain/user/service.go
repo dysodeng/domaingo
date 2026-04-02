@@ -24,18 +24,32 @@ func NewSvc(repo Repository) Service {
 }
 
 func (s *service) GetByID(ctx context.Context, uid uuid.UUID) (*model.User, error) {
-	return s.repo.FindByID(ctx, uid)
+	u, err := s.repo.FindByID(ctx, uid)
+	if err != nil {
+		return nil, ErrUserNotFound.Wrap(err)
+	}
+	return u, nil
 }
 
 func (s *service) Save(ctx context.Context, user *model.User) (uuid.UUID, error) {
 	// 检查用户是否存在
 	if _, err := s.repo.FindByID(ctx, user.UID); err == nil {
 		// 用户存在，更新用户信息
-		return user.UID, s.repo.Update(ctx, user)
+		if err = s.repo.Update(ctx, user); err != nil {
+			return uuid.Nil, ErrUserSaveFail.Wrap(err)
+		}
+		return user.UID, nil
 	}
-	return s.repo.Create(ctx, user)
+	uid, err := s.repo.Create(ctx, user)
+	if err != nil {
+		return uuid.Nil, ErrUserSaveFail.Wrap(err)
+	}
+	return uid, nil
 }
 
 func (s *service) Delete(ctx context.Context, uid uuid.UUID) error {
-	return s.repo.Delete(ctx, uid)
+	if err := s.repo.Delete(ctx, uid); err != nil {
+		return ErrUserDeleteFail.Wrap(err)
+	}
+	return nil
 }

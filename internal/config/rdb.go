@@ -11,13 +11,14 @@ import (
 const rdbLocalFileName = "rdb"
 
 type rdbConn struct {
-	Enabled  bool   `json:"enabled" mapstructure:"enabled"`
-	Driver   string `json:"driver" mapstructure:"driver"`
-	Host     string `json:"host" mapstructure:"host"`
-	Port     int    `json:"port" mapstructure:"port"`
-	Username string `json:"username" mapstructure:"username"`
-	Password string `json:"password" mapstructure:"password"`
-	Database string `json:"database" mapstructure:"database"`
+	Enabled     bool   `json:"enabled" mapstructure:"enabled"`
+	AutoMigrate bool   `json:"auto_migrate" mapstructure:"auto_migrate"`
+	Driver      string `json:"driver" mapstructure:"driver"`
+	Host        string `json:"host" mapstructure:"host"`
+	Port        int    `json:"port" mapstructure:"port"`
+	Username    string `json:"username" mapstructure:"username"`
+	Password    string `json:"password" mapstructure:"password"`
+	Database    string `json:"database" mapstructure:"database"`
 }
 
 type rdb struct {
@@ -56,24 +57,26 @@ func NewRdbLoader(opt Option) *RdbLoader {
 }
 
 func (l *RdbLoader) Load() (*rdb, error) {
-	var cfg rdb
+
 	err := l.cli.Load()
 	if err != nil {
 		return nil, err
 	}
-	err = l.cli.UnmarshalKey(rdbLocalFileName, &cfg)
+	rdb, err := l.Unmarshal()
 	if err != nil {
 		return nil, err
 	}
-	return &cfg, nil
+	return rdb, nil
 }
 
 func (l *RdbLoader) Unmarshal() (*rdb, error) {
-	var cfg rdb
-	if err := l.cli.UnmarshalKey(rdbLocalFileName, &cfg); err != nil {
+	var cfg struct {
+		Rdb rdb `mapstructure:"rdb"`
+	}
+	if err := l.cli.Unmarshal(&cfg); err != nil {
 		return nil, err
 	}
-	return &cfg, nil
+	return &cfg.Rdb, nil
 }
 
 func (l *RdbLoader) Watch(handler configCli.ChangeHandler) error {

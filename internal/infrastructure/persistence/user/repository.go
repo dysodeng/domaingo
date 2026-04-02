@@ -17,6 +17,14 @@ func NewRepository(rdb *rdb.Rdb) *repository {
 	return &repository{rdb: rdb}
 }
 
+func (r *repository) FindByEmail(ctx context.Context, email string) (*domainmodel.User, error) {
+	var u model.User
+	if err := r.rdb.Reader().WithContext(ctx).Where("email = ?", email).First(&u).Error; err != nil {
+		return nil, err
+	}
+	return u.ToEntity()
+}
+
 func (r *repository) FindByID(ctx context.Context, uid uuid.UUID) (*domainmodel.User, error) {
 	var u model.User
 	if err := r.rdb.Reader().WithContext(ctx).Where("uid = ?", uid.String()).First(&u).Error; err != nil {

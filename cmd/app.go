@@ -25,9 +25,11 @@ import (
 
 	apihttp "github.com/CXeon/domaingo/api/http"
 	"github.com/CXeon/domaingo/internal/config"
+	authdomain "github.com/CXeon/domaingo/internal/domain/auth"
 	infraGateway "github.com/CXeon/domaingo/internal/infrastructure/gateway"
 	infraRdb "github.com/CXeon/domaingo/internal/infrastructure/rdb"
 	infraRegistry "github.com/CXeon/domaingo/internal/infrastructure/registry"
+	"github.com/CXeon/domaingo/internal/infrastructure/tokenstore"
 	appLogger "github.com/CXeon/domaingo/internal/logger"
 	"github.com/CXeon/domaingo/internal/modular"
 	utilip "github.com/CXeon/tiles/util/ip"
@@ -41,10 +43,11 @@ type App struct {
 	flags  config.Flags
 	logger tilesLogger.Logger
 
-	gateway  *infraGateway.Gateway   // nil if disabled
-	registry *infraRegistry.Registry // nil if disabled
-	rdb      *infraRdb.Rdb
-	srv      *apihttp.Server
+	tokenStore authdomain.TokenStore
+	gateway    *infraGateway.Gateway
+	registry   *infraRegistry.Registry
+	rdb        *infraRdb.Rdb
+	srv        *apihttp.Server
 
 	stopOnce  sync.Once
 	restartCh chan struct{}
@@ -66,6 +69,9 @@ func (a *App) Init() error {
 	if err := config.Load(a.flags); err != nil {
 		return err
 	}
+
+	// 0. Token store (in-memory; replace with Redis later)
+	a.tokenStore = tokenstore.New()
 
 	// 1. Logger (always initialized)
 	logCfg := config.Config.Base.Log
@@ -105,8 +111,9 @@ func (a *App) Init() error {
 
 	// 5. HTTP Server
 	deps := modular.Deps{
-		Rdb:    a.rdb,
-		Logger: a.logger,
+		Rdb:        a.rdb,
+		Logger:     a.logger,
+		TokenStore: a.tokenStore,
 	}
 	srv, err := apihttp.NewServer(
 		fmt.Sprintf(":%d", a.flags.HttpPort),
@@ -138,6 +145,13 @@ func (a *App) Start() error {
 
 	if err := a.rdb.Start(a.ctx); err != nil {
 		return err
+	}
+
+	// 自动建表
+	if config.Config.Rdb.Main.AutoMigrate {
+		if err := a.rdb.AutoMigrate(migrateModels()...); err != nil {
+			return err
+		}
 	}
 
 	go func() {

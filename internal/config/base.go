@@ -11,6 +11,11 @@ import (
 const baseLocalFileName = "base"
 
 type base struct {
+	JWT struct {
+		Secret     string `json:"secret" mapstructure:"secret"`
+		AccessTTL  int    `json:"access_ttl" mapstructure:"access_ttl"`   // seconds
+		RefreshTTL int    `json:"refresh_ttl" mapstructure:"refresh_ttl"` // seconds
+	} `json:"jwt" mapstructure:"jwt"`
 	Log struct {
 		Filename     string `json:"filename" mapstructure:"filename"`
 		Level        string `json:"level" mapstructure:"level"`
@@ -76,25 +81,26 @@ func NewBaseLoader(opt Option) *BaseLoader {
 }
 
 func (l *BaseLoader) Load() (*base, error) {
-	var cfg base
 	err := l.cli.Load()
 	if err != nil {
 		return nil, err
 	}
-	err = l.cli.UnmarshalKey(baseLocalFileName, &cfg)
+	base, err := l.Unmarshal()
 	if err != nil {
 		return nil, err
 	}
 
-	return &cfg, nil
+	return base, nil
 }
 
 func (l *BaseLoader) Unmarshal() (*base, error) {
-	var cfg base
-	if err := l.cli.UnmarshalKey(baseLocalFileName, &cfg); err != nil {
+	var cfg struct {
+		Base base `mapstructure:"base"`
+	}
+	if err := l.cli.Unmarshal(&cfg); err != nil {
 		return nil, err
 	}
-	return &cfg, nil
+	return &cfg.Base, nil
 }
 
 func (l *BaseLoader) Watch(handler configCli.ChangeHandler) error {
