@@ -21,6 +21,8 @@ import (
 	zapLogger "github.com/CXeon/tiles/logger/zap"
 	tilesRegistry "github.com/CXeon/tiles/registry"
 	"github.com/CXeon/tiles/registry/etcd"
+	tilesCache "github.com/CXeon/tiles/cache"
+	tilesRedis "github.com/CXeon/tiles/cache/redis"
 	"github.com/google/uuid"
 
 	apihttp "github.com/CXeon/domaingo/api/http"
@@ -43,6 +45,7 @@ type App struct {
 	flags  config.Flags
 	logger tilesLogger.Logger
 
+	cache      tilesCache.Cache
 	tokenStore authdomain.TokenStore
 	gateway    *infraGateway.Gateway
 	registry   *infraRegistry.Registry
@@ -70,8 +73,9 @@ func (a *App) Init() error {
 		return err
 	}
 
-	// 0. Token store (in-memory; replace with Redis later)
-	a.tokenStore = tokenstore.New()
+	// 0. Token store (Redis)
+	a.cache = a.buildCache()
+	a.tokenStore = tokenstore.NewRedis(a.cache)
 
 	// 1. Logger (always initialized)
 	logCfg := config.Config.Base.Log
@@ -218,6 +222,12 @@ func (a *App) Stop() (stopErr error) {
 			}
 		}
 
+		if a.cache != nil {
+			if err := a.cache.Close(); err != nil {
+				errs = append(errs, err)
+			}
+		}
+
 		if err := config.Close(); err != nil {
 			errs = append(errs, err)
 		}
@@ -228,7 +238,7 @@ func (a *App) Stop() (stopErr error) {
 }
 
 // handleConfigChange is called by the config watcher on any change.
-// Any modification to log, gateway, registry, or rdb config triggers a process restart.
+// Any modification to log, gateway, registry, rdb, or cache config triggers a process restart.
 func (a *App) handleConfigChange(event *configCli.ChangeEvent) {
 	// Empty Changes slice means a full config reload — always restart.
 	needRestart := len(event.Changes) == 0
@@ -237,7 +247,8 @@ func (a *App) handleConfigChange(event *configCli.ChangeEvent) {
 			if strings.HasPrefix(change.Key, "base.log") ||
 				strings.HasPrefix(change.Key, "base.gateway") ||
 				strings.HasPrefix(change.Key, "base.registry") ||
-				strings.HasPrefix(change.Key, "rdb.") {
+				strings.HasPrefix(change.Key, "rdb.") ||
+				strings.HasPrefix(change.Key, "cache.") {
 				needRestart = true
 				break
 			}
@@ -368,4 +379,18 @@ func (a *App) buildRdb() *infraRdb.Rdb {
 	}
 
 	return infraRdb.NewRdb(mainCfg, secondaryCfg)
+}
+
+func (a *App) buildCache() tilesCache.Cache {
+	cfg := config.Config.Cache.TokenStore
+	return tilesRedis.New(tilesRedis.Config{
+		Addr:         cfg.Addr,
+		Password:     cfg.Password,
+		DB:           cfg.DB,
+		PoolSize:     cfg.PoolSize,
+		MinIdleConns: cfg.MinIdleConns,
+		DialTimeout:  time.Duration(cfg.DialTimeout) * time.Second,
+		ReadTimeout:  time.Duration(cfg.ReadTimeout) * time.Second,
+		WriteTimeout: time.Duration(cfg.WriteTimeout) * time.Second,
+	})
 }

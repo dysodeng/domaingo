@@ -16,12 +16,14 @@ type config struct {
 	lextra *localExtra
 	rextra *remoteExtra
 
-	l          sync.RWMutex
-	baseLoader *BaseLoader
-	rdbLoader  *RdbLoader
+	l           sync.RWMutex
+	baseLoader  *BaseLoader
+	rdbLoader   *RdbLoader
+	cacheLoader *CacheLoader
 
-	Base *base `json:"base"`
-	Rdb  *rdb  `json:"rdb"`
+	Base  *base        `json:"base"`
+	Rdb   *rdb         `json:"rdb"`
+	Cache *cacheConfig `json:"cache"`
 }
 
 // Flags 包装程序启动参数，在程序的生命周期内不允许修改
@@ -122,6 +124,15 @@ func Load(f Flags) error {
 		Config.rdbLoader = rdbLoader
 		Config.Rdb = rdbCfg
 
+		// 加载cache配置
+		cacheLoader := NewCacheLoader(opt)
+		cacheCfg, err := cacheLoader.Load()
+		if err != nil {
+			panic(err)
+		}
+		Config.cacheLoader = cacheLoader
+		Config.Cache = cacheCfg
+
 	})
 
 	return nil
@@ -165,6 +176,23 @@ func Watch(handler configCli.ChangeHandler) error {
 		}
 	})
 
+	if err != nil {
+		return err
+	}
+
+	err = Config.cacheLoader.Watch(func(event *configCli.ChangeEvent) {
+		Config.l.Lock()
+		newCache, err := Config.cacheLoader.Unmarshal()
+		if err == nil {
+			Config.Cache = newCache
+		}
+		Config.l.Unlock()
+
+		if handler != nil {
+			handler(event)
+		}
+	})
+
 	return err
 }
 
@@ -178,6 +206,12 @@ func Close() error {
 	}
 	if Config.rdbLoader != nil {
 		if err := Config.rdbLoader.Close(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	if Config.cacheLoader != nil {
+		if err := Config.cacheLoader.Close(); err != nil {
 			errs = append(errs, err)
 		}
 	}

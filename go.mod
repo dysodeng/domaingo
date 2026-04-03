@@ -114,4 +114,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-// replace github.com/CXeon/tiles => ../tiles
+ replace github.com/CXeon/tiles => ../tiles

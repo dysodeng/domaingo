@@ -1,0 +1,10 @@
+cache:
+  token_store:
+    addr: "localhost:6379"  # CACHE_TOKEN_STORE_ADDR
+    password: ""            # CACHE_TOKEN_STORE_PASSWORD
+    db: 0                   # CACHE_TOKEN_STORE_DB
+    pool_size: 10           # CACHE_TOKEN_STORE_POOL_SIZE
+    min_idle_conns: 2       # CACHE_TOKEN_STORE_MIN_IDLE_CONNS
+    dial_timeout: 5         # CACHE_TOKEN_STORE_DIAL_TIMEOUT seconds
+    read_timeout: 3         # CACHE_TOKEN_STORE_READ_TIMEOUT seconds
+    write_timeout: 3        # CACHE_TOKEN_STORE_WRITE_TIMEOUT seconds
