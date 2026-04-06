@@ -38,8 +38,15 @@ type base struct {
 		} `json:"provider" mapstructure:"provider"`
 	} `json:"gateway" mapstructure:"gateway"`
 	Registry struct {
-		Enabled  bool `json:"enabled" mapstructure:"enabled"`
-		Weight   int  `json:"weight" mapstructure:"weight"`
+		Enabled bool `json:"enabled" mapstructure:"enabled"`
+		Weight  int  `json:"weight" mapstructure:"weight"`
+		Watch   struct {
+			Services []string `json:"services" mapstructure:"services"`
+			ComProj  []struct {
+				Company  string   `json:"company" mapstructure:"company"`
+				Projects []string `json:"projects" mapstructure:"projects"`
+			} `json:"com_proj" mapstructure:"com_proj"`
+		} `json:"watch" mapstructure:"watch"`
 		Provider struct {
 			Endpoints            []string `json:"endpoints" mapstructure:"endpoints"`
 			Username             string   `json:"username" mapstructure:"username"`

@@ -25,6 +25,11 @@ base:
   registry:
     enabled: true
     weight: 10
+    watch:
+      services: []      # BASE_REGISTRY_WATCH_SERVICES
+      com_proj: []      # extra company+project scopes; empty = use flags company/project only
+        # - company: OtherCo
+        #   projects: [ProjectA, ProjectB]
     provider:
       endpoints:        # BASE_REGISTRY_PROVIDER_ENDPOINTS
         - 127.0.0.1:2379

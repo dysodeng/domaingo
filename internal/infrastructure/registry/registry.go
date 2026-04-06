@@ -9,22 +9,43 @@ import (
 	"github.com/CXeon/tiles/registry/etcd"
 )
 
-// Registry wraps an etcd registry client, managing endpoint registration and lifecycle.
+// Locator is a narrow interface for service discovery lookups.
+// Consumers use this to resolve a service name to a live endpoint.
+type Locator interface {
+	GetService(ctx context.Context, service string, option ...tilesRegistry.GetServiceOption) (tilesRegistry.Endpoint, error)
+}
+
+// WatchConfig holds the service discovery configuration.
+type WatchConfig struct {
+	// Services is the list of service names to discover and watch.
+	// Empty means no discovery is performed.
+	Services []string
+	// ComProj restricts discovery to specific company+project scopes.
+	// nil means use the registered endpoint's own company and project.
+	ComProj map[string][]string
+}
+
+// Registry wraps an etcd registry client, managing endpoint registration,
+// service discovery, and lifecycle.
 type Registry struct {
 	cfg      etcd.Config
 	endpoint *tilesRegistry.Endpoint
+	watchCfg WatchConfig
 	registry *etcd.Registry
 	running  atomic.Bool
 }
 
-func NewRegistry(cfg etcd.Config, endpoint *tilesRegistry.Endpoint) *Registry {
+func NewRegistry(cfg etcd.Config, endpoint *tilesRegistry.Endpoint, watchCfg WatchConfig) *Registry {
 	return &Registry{
 		cfg:      cfg,
 		endpoint: endpoint,
+		watchCfg: watchCfg,
 	}
 }
 
-// Start establishes a connection to etcd and registers the service endpoint.
+// Start establishes a connection to etcd, registers the service endpoint,
+// then (if watch services are configured) performs an initial Discover
+// followed by a Watch to keep the local cache up to date.
 func (r *Registry) Start(ctx context.Context) error {
 	reg, err := etcd.NewRegistry(r.cfg)
 	if err != nil {
@@ -36,7 +57,32 @@ func (r *Registry) Start(ctx context.Context) error {
 	}
 	r.registry = reg
 	r.running.Store(true)
+
+	if len(r.watchCfg.Services) == 0 {
+		return nil
+	}
+
+	var opts []tilesRegistry.ServiceOption
+	if len(r.watchCfg.ComProj) > 0 {
+		opts = append(opts, tilesRegistry.WithGetOptComProj(r.watchCfg.ComProj))
+	}
+
+	if _, err = reg.Discover(ctx, r.watchCfg.Services, opts...); err != nil {
+		_ = r.Stop(ctx)
+		return err
+	}
+	if err = reg.Watch(ctx, r.watchCfg.Services, opts...); err != nil {
+		_ = r.Stop(ctx)
+		return err
+	}
+
 	return nil
+}
+
+// GetService implements Locator. It resolves a service name to a live
+// endpoint using the local cache populated by Discover and Watch.
+func (r *Registry) GetService(ctx context.Context, service string, option ...tilesRegistry.GetServiceOption) (tilesRegistry.Endpoint, error) {
+	return r.registry.GetService(ctx, service, option...)
 }
 
 // Stop deregisters the service endpoint and closes the etcd connection.

@@ -13,6 +13,8 @@ import (
 	"syscall"
 	"time"
 
+	tilesCache "github.com/CXeon/tiles/cache"
+	tilesRedis "github.com/CXeon/tiles/cache/redis"
 	configCli "github.com/CXeon/tiles/config"
 	"github.com/CXeon/tiles/db/gormdb"
 	tilesGateway "github.com/CXeon/tiles/gateway"
@@ -21,8 +23,6 @@ import (
 	zapLogger "github.com/CXeon/tiles/logger/zap"
 	tilesRegistry "github.com/CXeon/tiles/registry"
 	"github.com/CXeon/tiles/registry/etcd"
-	tilesCache "github.com/CXeon/tiles/cache"
-	tilesRedis "github.com/CXeon/tiles/cache/redis"
 	"github.com/google/uuid"
 
 	apihttp "github.com/CXeon/domaingo/api/http"
@@ -115,9 +115,10 @@ func (a *App) Init() error {
 
 	// 5. HTTP Server
 	deps := modular.Deps{
-		Rdb:        a.rdb,
-		Logger:     a.logger,
-		TokenStore: a.tokenStore,
+		Rdb:            a.rdb,
+		Logger:         a.logger,
+		TokenStore:     a.tokenStore,
+		ServiceLocator: a.registry,
 	}
 	srv, err := apihttp.NewServer(
 		fmt.Sprintf(":%d", a.flags.HttpPort),
@@ -351,7 +352,20 @@ func (a *App) buildRegistry() (*infraRegistry.Registry, error) {
 		LoadBalancerStrategy: regCfg.Provider.LoadBalancerStrategy,
 	}
 
-	return infraRegistry.NewRegistry(cfg, endpoint), nil
+	var comProj map[string][]string
+	if len(regCfg.Watch.ComProj) > 0 {
+		comProj = make(map[string][]string, len(regCfg.Watch.ComProj))
+		for _, cp := range regCfg.Watch.ComProj {
+			comProj[cp.Company] = cp.Projects
+		}
+	}
+
+	watchCfg := infraRegistry.WatchConfig{
+		Services: regCfg.Watch.Services,
+		ComProj:  comProj,
+	}
+
+	return infraRegistry.NewRegistry(cfg, endpoint, watchCfg), nil
 }
 
 func (a *App) buildRdb() *infraRdb.Rdb {
