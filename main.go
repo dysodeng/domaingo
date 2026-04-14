@@ -29,7 +29,7 @@ func main() {
 	flag.StringVar(&project, "project", "project", "项目标识")
 	flag.StringVarP(&serviceName, "service", "s", "domaingo", "服务名称")
 	flag.StringVar(&color, "color", "", "染色标记")
-	flag.UintVarP(&httpPort, "port", "p", 18080, "HTTP 监听端口")
+	flag.UintVarP(&httpPort, "port", "p", 8080, "HTTP 监听端口")
 	flag.Parse()
 
 	if serviceName == "" {
